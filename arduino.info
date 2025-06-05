@@ -1,0 +1,56 @@
+#include <Servo.h>
+
+// Define servo pins
+#define RED2_PIN 9
+#define GREEN_PIN 10
+#define BLUE_PIN 11
+
+Servo red2Servo;
+Servo greenServo;
+Servo blueServo;
+
+String command;
+
+void setup() {
+  // Initialize serial communication at 9600 baud rate
+  Serial.begin(9600);
+
+  // Attach servos to their respective pins
+  red2Servo.attach(RED2_PIN);
+  greenServo.attach(GREEN_PIN);
+  blueServo.attach(BLUE_PIN);
+
+  // Set initial position to 0 degrees
+  red2Servo.write(0);
+  greenServo.write(0);
+  blueServo.write(0);
+
+  // Wait for serial connection to establish
+  while (!Serial) {
+    ; // Wait for serial port to connect (needed for some boards like Leonardo)
+  }
+}
+
+void loop() {
+  // Check if data is available on the serial port
+  if (Serial.available() > 0) {
+    command = Serial.readStringUntil('\n'); // Read until newline
+    command.trim(); // Remove any whitespace
+
+    // Parse the command: format "COLOR:ANGLE" (e.g., "RED2:90")
+    int separatorIndex = command.indexOf(':');
+    if (separatorIndex != -1) {
+      String color = command.substring(0, separatorIndex);
+      int angle = command.substring(separatorIndex + 1).toInt();
+
+      // Control the appropriate servo based on the color
+      if (color == "RED2") {
+        red2Servo.write(angle);
+      } else if (color == "GREEN") {
+        greenServo.write(angle);
+      } else if (color == "BLUE") {
+        blueServo.write(angle);
+      }
+    }
+  }
+}
