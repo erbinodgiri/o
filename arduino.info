@@ -32,25 +32,29 @@ void setup() {
 }
 
 void loop() {
-  // Check if data is available on the serial port
   if (Serial.available() > 0) {
     command = Serial.readStringUntil('\n'); // Read until newline
     command.trim(); // Remove any whitespace
 
-    // Parse the command: format "COLOR:ANGLE" (e.g., "RED2:90")
     int separatorIndex = command.indexOf(':');
     if (separatorIndex != -1) {
       String color = command.substring(0, separatorIndex);
       int angle = command.substring(separatorIndex + 1).toInt();
 
-      // Control the appropriate servo based on the color
       if (color == "RED2") {
         red2Servo.write(angle);
+        Serial.println("OK: RED2 moved to " + String(angle));
       } else if (color == "GREEN") {
         greenServo.write(angle);
+        Serial.println("OK: GREEN moved to " + String(angle));
       } else if (color == "BLUE") {
         blueServo.write(angle);
+        Serial.println("OK: BLUE moved to " + String(angle));
+      } else {
+        Serial.println("ERROR: Unknown color");
       }
+    } else {
+      Serial.println("ERROR: Invalid format");
     }
   }
 }
