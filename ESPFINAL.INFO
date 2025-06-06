@@ -1,0 +1,81 @@
+#include <ESP32Servo.h>
+
+const int NUM_SERVOS = 7;
+const int servoPins[NUM_SERVOS] = {13, 12, 14, 27, 26, 25, 33};
+
+Servo servos[NUM_SERVOS];
+
+const int CLOSE_ANGLE = 90;
+const int LEFT_ANGLE = 30;
+const int RIGHT_ANGLE = 150;
+const int RESET_DELAY = 400;
+
+struct Step {
+  int servoIndex;
+  const char* direction;  // Use C-style string
+};
+
+struct ColorRoute {
+  const char* color;
+  Step path[3];
+  int pathLen;
+};
+
+ColorRoute routes[] = {
+  {"RED",    {{0,"R"}, {1,"R"}, {3,"R"}}, 3},
+  {"ORANGE", {{0,"R"}, {1,"R"}, {3,"L"}}, 3},
+  {"YELLOW", {{0,"R"}, {1,"L"}, {4,"R"}}, 3},
+  {"GREEN",  {{0,"R"}, {1,"L"}, {4,"L"}}, 3},
+  {"BLUE",   {{0,"L"}, {2,"R"}, {5,"R"}}, 3},
+  {"PINK",   {{0,"L"}, {2,"R"}, {5,"L"}}, 3},
+  {"WHITE",  {{0,"L"}, {2,"L"}, {6,"R"}}, 3},
+  {"BLACK",  {{0,"L"}, {2,"L"}, {6,"L"}}, 3}
+};
+
+void setup() {
+  Serial.begin(115200);
+  delay(1000);
+
+  for (int i = 0; i < NUM_SERVOS; i++) {
+    servos[i].setPeriodHertz(50);
+    servos[i].attach(servoPins[i], 500, 2400);
+    servos[i].write(CLOSE_ANGLE);
+  }
+
+  Serial.println("ESP32 Tree Sorter with Left/Right Ready. Send color name...");
+}
+
+void loop() {
+  if (Serial.available()) {
+    String input = Serial.readStringUntil('\n');
+    input.trim();
+    input.toUpperCase();
+
+    bool matched = false;
+
+    for (int i = 0; i < sizeof(routes)/sizeof(routes[0]); i++) {
+      if (input.equalsIgnoreCase(routes[i].color)) {
+        Serial.println("Sorting: " + input);
+
+        for (int j = 0; j < routes[i].pathLen; j++) {
+          int idx = routes[i].path[j].servoIndex;
+          int angle = (strcmp(routes[i].path[j].direction, "L") == 0) ? LEFT_ANGLE : RIGHT_ANGLE;
+          servos[idx].write(angle);
+          delay(RESET_DELAY);
+        }
+
+        for (int j = routes[i].pathLen - 1; j >= 0; j--) {
+          servos[routes[i].path[j].servoIndex].write(CLOSE_ANGLE);
+          delay(150);
+        }
+
+        matched = true;
+        break;
+      }
+    }
+
+    if (!matched) {
+      Serial.println("Unknown color: " + input);
+    }
+  }
+}
